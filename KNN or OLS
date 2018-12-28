@@ -1,0 +1,462 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import math\n",
+    "import warnings\n",
+    "\n",
+    "from IPython.display import display\n",
+    "from matplotlib import pyplot as plt\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import seaborn as sns; sns.set()\n",
+    "import sklearn\n",
+    "from sklearn import linear_model\n",
+    "import statsmodels.formula.api as smf\n",
+    "import statsmodels.api as sm\n",
+    "from sklearn.metrics import mean_squared_error\n",
+    "\n",
+    "%matplotlib inline\n",
+    "pd.options.display.float_format = '{:.3f}'.format\n",
+    "warnings.filterwarnings(\n",
+    "    action=\"ignore\",\n",
+    "    module=\"scipy\",\n",
+    "    message=\"^internal gelsd\"\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "PATH=('/Users/bryanevan/desktop/calidata.csv')\n",
+    "df=pd.read_csv(PATH)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['City',\n",
+       " 'Population',\n",
+       " 'Violent crime',\n",
+       " 'Murder and nonnegligent manslaughter',\n",
+       " 'Rape(revised definition)1',\n",
+       " 'Rape(legacy definition)2',\n",
+       " 'Robbery',\n",
+       " 'Aggravated assault',\n",
+       " 'Property crime',\n",
+       " 'Burglary',\n",
+       " 'Larceny-theft',\n",
+       " 'Motor vehicle theft',\n",
+       " 'Arson',\n",
+       " 'Unnamed: 13']"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "names=[i for i in list(df)]\n",
+    "names"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1=df.drop(['Unnamed: 13'], axis=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1=df1.drop(['Rape(revised definition)1'], axis=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1=df1.rename(columns={'Violent crime': 'Violent_crime', 'Murder and nonnegligent manslaughter': 'Murder_manslaughter', 'Rape(legacy definition)2': 'Rape', 'Aggravated assault': 'Aggravated_assault', 'Property crime': 'Property_crime', 'Larceny-theft': 'Theft', 'Motor vehicle theft': 'GTA'})"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1.Population=df1.Population.apply(lambda x: x.replace(',', '')).astype('int')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1.Violent_crime=df1.Violent_crime.apply(lambda x: x.replace(',', '')).astype('int')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1.Robbery=df1.Robbery.apply(lambda x: x.replace(',', '')).astype('int')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1.Aggravated_assault=df1.Aggravated_assault.apply(lambda x: x.replace(',', '')).astype('int')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1.Property_crime=df1.Property_crime.apply(lambda x: x.replace(',', '')).astype('int')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1.Burglary=df1.Burglary.apply(lambda x: x.replace(',', '')).astype('int')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1.Theft=df1.Theft.apply(lambda x: x.replace(',', '')).astype('int')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1.GTA=df1.GTA.apply(lambda x: x.replace(',', '')).astype('int')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1.Arson=df1.Arson.apply(lambda x: x.replace(',', '')).astype('int')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df2=df1[['Robbery']]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### OLS"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Intercept: \n",
+      " [814.7377932]\n",
+      "Coefficients: \n",
+      " [[10.2753438]]\n",
+      "\n",
+      "R-squared:\n",
+      "0.8723390872425194\n",
+      "RMSE: 2217.8497\n",
+      "MAE: 980.9548\n"
+     ]
+    }
+   ],
+   "source": [
+    "from sklearn.linear_model import LinearRegression\n",
+    "X = df2\n",
+    "y = df1['Property_crime'].values.reshape(-1,1)\n",
+    "regr = LinearRegression()\n",
+    "regr.fit(X, y)\n",
+    "regr.score(X, y)\n",
+    "print('Intercept: \\n', regr.intercept_)\n",
+    "print('Coefficients: \\n', regr.coef_)\n",
+    "print('\\nR-squared:')\n",
+    "print(regr.score(X, y))\n",
+    "\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "X_train, X_test, y_train, y_test = train_test_split(X, y)\n",
+    "regr.fit(X_train, y_train)\n",
+    "y_pred=regr.predict(X_test)\n",
+    "\n",
+    "#RMSE\n",
+    "from sklearn.metrics import mean_squared_error\n",
+    "lin_mse = mean_squared_error(y_test, y_pred)\n",
+    "lin_rmse = np.sqrt(lin_mse)\n",
+    "print('RMSE: %.4f' % lin_rmse)\n",
+    "#MAE\n",
+    "from sklearn.metrics import mean_absolute_error\n",
+    "lin_mae = mean_absolute_error(y_test, y_pred)\n",
+    "print('MAE: %.4f' % lin_mae)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from statsmodels.sandbox.regression.predstd import wls_prediction_std\n",
+    "linform = 'Property_crime ~ GTA+Burglary+Robbery+Population'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "lm=smf.ols(formula=linform, data=df1).fit()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "scrolled": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "                            OLS Regression Results                            \n",
+      "==============================================================================\n",
+      "Dep. Variable:         Property_crime   R-squared:                       0.973\n",
+      "Model:                            OLS   Adj. R-squared:                  0.973\n",
+      "Method:                 Least Squares   F-statistic:                     4133.\n",
+      "Date:                Fri, 28 Dec 2018   Prob (F-statistic):               0.00\n",
+      "Time:                        13:41:56   Log-Likelihood:                -3792.7\n",
+      "No. Observations:                 462   AIC:                             7595.\n",
+      "Df Residuals:                     457   BIC:                             7616.\n",
+      "Df Model:                           4                                         \n",
+      "Covariance Type:            nonrobust                                         \n",
+      "==============================================================================\n",
+      "                 coef    std err          t      P>|t|      [0.025      0.975]\n",
+      "------------------------------------------------------------------------------\n",
+      "Intercept     60.6256     47.323      1.281      0.201     -32.373     153.624\n",
+      "GTA            0.5745      0.170      3.378      0.001       0.240       0.909\n",
+      "Burglary       2.3639      0.160     14.741      0.000       2.049       2.679\n",
+      "Robbery        2.8041      0.212     13.223      0.000       2.387       3.221\n",
+      "Population     0.0056      0.001     10.153      0.000       0.004       0.007\n",
+      "==============================================================================\n",
+      "Omnibus:                      713.060   Durbin-Watson:                   2.015\n",
+      "Prob(Omnibus):                  0.000   Jarque-Bera (JB):           478993.637\n",
+      "Skew:                           7.996   Prob(JB):                         0.00\n",
+      "Kurtosis:                     159.930   Cond. No.                     2.48e+05\n",
+      "==============================================================================\n",
+      "\n",
+      "Warnings:\n",
+      "[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.\n",
+      "[2] The condition number is large, 2.48e+05. This might indicate that there are\n",
+      "strong multicollinearity or other numerical problems.\n",
+      "                 0       1\n",
+      "Intercept  -32.373 153.624\n",
+      "GTA          0.240   0.909\n",
+      "Burglary     2.049   2.679\n",
+      "Robbery      2.387   3.221\n",
+      "Population   0.004   0.007\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(lm.summary())\n",
+    "confidence=lm.conf_int()\n",
+    "print(confidence)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### CV\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ 0.68811174,  0.70449031,  0.5088914 ,  0.54667968,  0.63295459,\n",
+       "        0.53171782,  0.49410107,  0.98659372,  0.71436594, -0.84912597,\n",
+       "        0.74702989,  0.83488384,  0.53798554,  0.86834712,  0.52135142])"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn.model_selection import cross_val_score\n",
+    "cross_val_score(regr, X, y, cv=15)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### KNN"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn import neighbors\n",
+    "# Build our model.\n",
+    "knn = neighbors.KNeighborsRegressor(n_neighbors=10)\n",
+    "X = df2\n",
+    "Y = df1.Property_crime\n",
+    "knn.fit(X, Y)\n",
+    "T = np.arange(0, 50, 0.1)[:, np.newaxis]\n",
+    "Y_ = knn.predict(T)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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\n",
+      "text/plain": [
+       "<Figure size 432x288 with 1 Axes>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "# Weights\n",
+    "knn_w = neighbors.KNeighborsRegressor(n_neighbors=5, weights='distance')\n",
+    "knn_w.fit(X, Y)\n",
+    "\n",
+    "Y_w = knn_w.predict(T)\n",
+    "\n",
+    "plt.scatter(X, Y, c='k', label='data')\n",
+    "plt.plot(T, Y_w, c='g', label='prediction')\n",
+    "plt.legend()\n",
+    "plt.title('K=5, Weighted')\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Unweighted Accuracy: 0.70 (+/- 0.31)\n",
+      "Weighted Accuracy: 0.75 (+/- 0.19)\n"
+     ]
+    }
+   ],
+   "source": [
+    "from sklearn.model_selection import cross_val_score\n",
+    "score = cross_val_score(knn, X, Y, cv=5)\n",
+    "print(\"Unweighted Accuracy: %0.2f (+/- %0.2f)\" % (score.mean(), score.std() * 2))\n",
+    "score_w = cross_val_score(knn_w, X, Y, cv=5)\n",
+    "print(\"Weighted Accuracy: %0.2f (+/- %0.2f)\" % (score_w.mean(), score_w.std() * 2))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "##### Looking at OLS first, there's some apparent issues. RMSE strikes me as rather high, so I'm not greatly excited about using an error based approach unless I could calibrate the model enough to reach a satisfactory RMSE.  F-critical is 0.00; as are all coefficient P-values, and R^2 is in the 97% range. This model seems to be overfitting. This conclusion may be further explained by the fact that the confidence intervals of each respective coefficient are very tight. Cross-validation yielded unsastisfactory results, as folds, out of 15, show sporatic change and not many results near the desired 89% range; thus, we are overfitting at a variable amount.\n",
+    "\n",
+    "Now let us look at KNN. At this point, we're only using a K-fold CV to understand its performance when considering weighted and unweighted metrics. The unweighted metrics show higher variance than in the weighted model, and the weighted model does show a 5% increase in predicting power. The decrease in variance in the weighted model is exciting and leads me to determine that KNN with weights is looking better at this point than OLS; of course, this presupposes that we pick KNN regression in favor of OLS without observing any possible changes in OLS after refitting. \n",
+    "\n",
+    "Should this analysis hold, it would suggest that none of the indepedent variables have disproportionately large variance to confer to the model, both individually or by mutual interaction. If this is indeed the case, it would seem that KNN truly has its place in this instance. "
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
